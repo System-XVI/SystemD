@@ -440,6 +440,7 @@ _sd_export_ int sd_notify (int unset_environment, const char * state)
 #else
     int fd = -1, r;
     struct msghdr msghdr;
+    struct cmsghdr * cmsghdr;
     struct iovec iovec;
     union sockaddr_union sockaddr;
     const char * e;
@@ -488,6 +489,19 @@ _sd_export_ int sd_notify (int unset_environment, const char * state)
 
     msghdr.msg_iov = &iovec;
     msghdr.msg_iovlen = 1;
+
+/*
+ * Presume BSD for now. We will have to rethink this interface to port it to
+ * Illumos anyway. */
+#if !defined(__linux__)
+    /* For BSD: Explicitly attach SCM_CREDS */
+    msghdr.msg_controllen = CMSG_SPACE (sizeof (struct cmsgcred));
+    msghdr.msg_control = alloca (msghdr.msg_controllen);
+    cmsghdr = CMSG_FIRSTHDR (&msghdr);
+    cmsghdr->cmsg_level = SOL_SOCKET;
+    cmsghdr->cmsg_type = SCM_CREDS;
+    cmsghdr->cmsg_len = CMSG_LEN (sizeof (struct cmsgcred));
+#endif
 
     if (sendmsg (fd, &msghdr, MSG_NOSIGNAL) < 0)
     {
