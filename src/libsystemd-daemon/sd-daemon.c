@@ -490,11 +490,8 @@ _sd_export_ int sd_notify (int unset_environment, const char * state)
     msghdr.msg_iov = &iovec;
     msghdr.msg_iovlen = 1;
 
-/*
- * Presume BSD for now. We will have to rethink this interface to port it to
- * Illumos anyway. */
-#if !defined(__linux__)
-    /* For BSD: Explicitly attach SCM_CREDS */
+#if defined(__FreeBSD__)
+    /* For FreeBSD: Explicitly attach SCM_CREDS */
     msghdr.msg_controllen = CMSG_SPACE (sizeof (struct cmsgcred));
     msghdr.msg_control = alloca (msghdr.msg_controllen);
     cmsghdr = CMSG_FIRSTHDR (&msghdr);
