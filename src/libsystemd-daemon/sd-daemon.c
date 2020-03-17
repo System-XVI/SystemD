@@ -405,8 +405,8 @@ _sd_export_ int sd_is_mq (int fd, const char * path)
     if (fd < 0)
         return -EINVAL;
 
-    // if (mq_getattr (fd, &attr) < 0)
-    //    return -errno;
+    if (mq_getattr (fd, &attr) < 0)
+        return -errno;
 
     if (path)
     {
@@ -435,12 +435,15 @@ _sd_export_ int sd_is_mq (int fd, const char * path)
 
 _sd_export_ int sd_notify (int unset_environment, const char * state)
 {
-#if defined(DISABLE_SYSTEMD)
+#if defined(DISABLE_SYSTEMD) || !defined(S16_ENABLE_SD_NOTIFY)
+    fprintf(stderr, "Unsupported platform for sd_notify.\n");
     return 0;
 #else
     int fd = -1, r;
     struct msghdr msghdr;
+#if defined(__FreeBSD__)
     struct cmsghdr * cmsghdr;
+#endif
     struct iovec iovec;
     union sockaddr_union sockaddr;
     const char * e;
@@ -521,7 +524,8 @@ finish:
 
 _sd_export_ int sd_notifyf (int unset_environment, const char * format, ...)
 {
-#if defined(DISABLE_SYSTEMD)
+#if defined(DISABLE_SYSTEMD) || !defined(S16_ENABLE_SD_NOTIFY)
+    fprintf(stderr, "Unsupported platform for sd_notify.\n");
     return 0;
 #else
     va_list ap;
